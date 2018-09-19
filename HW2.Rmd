@@ -1,6 +1,6 @@
 ---
 title: "HW2 STA521 Fall18"
-author: '[Your Name Here, netid and github username here]'
+author: '[Yiwei Gong yg140 ywgej9]'
 date: "Due September 23, 2018 5pm"
 output:
   pdf_document: default
@@ -15,6 +15,12 @@ Readings: Chapters 3-4 in Weisberg Applied Linear Regression
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(ISLR)
+library(GGally)
+library(alr3)
+library(car)
+library(dplyr)
+library(knitr)
 ```
 
 This exercise involves the UN data set from `alr3` package. Install `alr3` and the `car` packages and load the data to answer the following questions adding your code in the code chunks.  Please add appropriate code to the chunks to suppress messages and warnings as needed once you are sure the code is working properly and remove instructions if no longer needed. Figures should have informative captions. Please switch the output to pdf for your final version to upload to Sakai. **Remove these instructions for final submission**
@@ -27,21 +33,38 @@ This exercise involves the UN data set from `alr3` package. Install `alr3` and t
 ```{r data}
 library(alr3)
 data(UN3, package="alr3")
-help(UN3) 
+help(UN3)
 library(car)
 ```
 
 
 1. Create a summary of the data.  How many variables have missing data?  Which are quantitative and which are qualtitative?
 
-```{r}
-
+```{r summary, echo=FALSE}
+summary(UN3)
 ```
+There are 6 variables having missing data. ModernC, Change, PPgdp, Frate, Pop, Fertility and Purban all are quantitative.
+
 
 2. What is the mean and standard deviation of each quantitative predictor?  Provide in a nicely formatted table.
 
-```{r}
-
+```{r kable, echo=FALSE}
+Mean = c(mean(UN3$ModernC, na.rm=T),
+         mean(UN3$Change, na.rm=T),
+         mean(UN3$PPgdp, na.rm=T),
+         mean(UN3$Frate, na.rm=T),
+         mean(UN3$Pop, na.rm=T),
+         mean(UN3$Fertility, na.rm=T),
+         mean(UN3$Purban, na.rm=T))
+Standard_err = c(sd(UN3$ModernC, na.rm=T),
+                 sd(UN3$Change,na.rm=T),
+                 sd(UN3$PPgdp, na.rm=T),
+                 sd(UN3$Frate, na.rm=T),
+                 sd(UN3$Pop, na.rm=T),
+                 sd(UN3$Fertility, na.rm=T),
+                 sd(UN3$Purban, na.rm=T))
+stat.UN3 = cbind(Mean, Standard_err)
+kable(t(stat.UN3), col.names=c('ModernC', 'Change', 'PPgdp', 'Frate', 'Pop', 'Fertility', 'Purban'), format='markdown')
 ```
 
 
@@ -49,16 +72,22 @@ library(car)
 highlighting the relationships among the predictors. Comment
 on your findings regarding trying to predict `ModernC` from the other variables.  Are there potential outliers, nonlinear relationships or transformations that appear to be needed based on your graphical EDA?
 
-```{r}
-
+```{r scatter plot}
+ggpairs(UN3, columns=c(1, 2, 3, 4, 5, 6), title='Scatter Plot among Variables')
 ```
+
+There seem downward linear trendings in ModernC when Change and Fertility increase. When PPgdp increases, ModernC seems to increase exponentially. Change seems to increase linearly w.r.t Fertility and there is a negative correlation between PPgdp and Fertility. Two points are suspicious to be outliers. Transformation of Pop may be required as the range of Pop is considerably large.
+
 
 ## Model Fitting
 
 4.  Use the `lm()` function to perform a multiple linear regression with `ModernC` as the response and all other variables as the predictors, using the formula `ModernC ~ .`, where the `.` includes all remaining variables in the dataframe.  Create  diagnostic residual plot from the linear model object and comment on results regarding assumptions.  How many observations are used in your model fitting?
 
-```{r}
-
+```{rinitial linear model, echo=FALSE}
+lm1 = lm(ModernC ~ Change + PPgdp + Frate + Pop + Fertility, data=UN3)
+summary(lm1)
+par(mfrow=c(2,2))
+plot(lm1)
 ```
 
 5. Examine added variable plots `car::avPlot` or `car::avPlots`  for your model above. Are there any plots that suggest that transformations are needed for any of the terms in the model? Describe. Is it likely that any of the localities are influential for any of the terms?  Which localities?  Which terms?  
