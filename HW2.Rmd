@@ -21,6 +21,7 @@ library(alr3)
 library(car)
 library(dplyr)
 library(knitr)
+library(ggplot2)
 ```
 
 This exercise involves the UN data set from `alr3` package. Install `alr3` and the `car` packages and load the data to answer the following questions adding your code in the code chunks.  Please add appropriate code to the chunks to suppress messages and warnings as needed once you are sure the code is working properly and remove instructions if no longer needed. Figures should have informative captions. Please switch the output to pdf for your final version to upload to Sakai. **Remove these instructions for final submission**
@@ -76,53 +77,74 @@ highlighting the relationships among the predictors. Comment
 on your findings regarding trying to predict `ModernC` from the other variables.  Are there potential outliers, nonlinear relationships or transformations that appear to be needed based on your graphical EDA?
 
 ```{r scatter plot}
-ggpairs(UN.nna, columns=c(1, 2, 3, 4, 5, 6), progress=F, title='Scatter Plot among Variables')
+ggpairs(UN.nna, columns=c(1, 2, 3, 4, 5, 6, 7), progress=F, title='Scatter Plot among Variables')
 ```
 
-There seem downward linear trendings in ModernC when Change and Fertility increase. When PPgdp increases, ModernC seems to increase exponentially. Change seems to increase linearly w.r.t Fertility and there is a negative correlation between PPgdp and Fertility. Two points are suspicious to be outliers. Transformation of Pop may be required as the range of Pop is considerably large.
+There seem downward linear trendings in ModernC when Change and Fertility increase. When PPgdp increases, ModernC seems to increase exponentially. Change seems to increase linearly w.r.t Fertility and there is a negative correlation between PPgdp and Fertility. Two points are suspicious to be outliers. Transformation of Pop may be required as the range of Pop is considerably large. ModernC seems to increase linearly w.r.t Purban while Change decreases w.r.t Purban.
 
 
 ## Model Fitting
 
 4.  Use the `lm()` function to perform a multiple linear regression with `ModernC` as the response and all other variables as the predictors, using the formula `ModernC ~ .`, where the `.` includes all remaining variables in the dataframe.  Create  diagnostic residual plot from the linear model object and comment on results regarding assumptions.  How many observations are used in your model fitting?
 
-```{rinitial linear model, echo=FALSE}
-lm1 = lm(ModernC ~ Change + PPgdp + Frate + Pop + Fertility, data=UN.nna)
+```{r initial linear, echo=FALSE}
+lm1 = lm(ModernC ~ Change + PPgdp + Frate + Pop + Fertility + Purban, data=UN.nna)
 summary(lm1)
 par(mfrow=c(2,2))
 plot(lm1)
 ```
-The Residuals vs Fitted plot suggests constant and 0 expectation of residuals and the Scale-Location plot confirms this, though not very ideal at the tail. The Normal QQ plot suggests violation of normality. The Residuals vs Leverage suggests there is no highly influential point. 
+The Residuals vs Fitted plot suggests constant and 0 expectation of residuals, though fluctuated in the middle, and the Scale-Location plot shows violation of constant variance. The Normal QQ plot suggests violation of normality. The Residuals vs Leverage suggests there is no highly influential point. 124 observations are used in this model fitting.
 
 
 5. Examine added variable plots `car::avPlot` or `car::avPlots`  for your model above. Are there any plots that suggest that transformations are needed for any of the terms in the model? Describe. Is it likely that any of the localities are influential for any of the terms?  Which localities?  Which terms?  
 
 ```{r}
-
+car::avPlots(lm(ModernC ~ Change + PPgdp + Frate + Pop + Fertility + Purban, data=UN.nna))
 ```
+
+Transformation seems needed for Pop, as most of the points cluster together except two. China and India in terms of Pop seem influential, though the Residual vs Leverage does not suggest that.
 
 6.  Using the Box-Tidwell  `car::boxTidwell` or graphical methods find appropriate transformations of the predictor variables to be used as predictors in the linear model.  If any predictors are negative, you may need to transform so that they are non-negative.  Describe your method and  the resulting transformations.
 
-
 ```{r}
-
+car::boxTidwell(ModernC~Pop + PPgdp, ~Change + Frate + Fertility + Purban, data=UN.nna)
+ggplot(data=UN.nna, aes(x=Pop, y=ModernC)) + geom_point()
+ggplot(data=UN.nna, aes(x=log(Pop), y=ModernC)) + geom_point()
+ggplot(data=UN.nna, aes(x=PPgdp, y=ModernC)) + geom_point()
+ggplot(data=UN.nna, aes(x=log(PPgdp), y=ModernC)) + geom_point()
 ```
+When boxTidwell is applied to PPgdp and Pop, MLE are closer to 0, so may be a log transformation, but there does not seem significant evidence for transformation, since both p-values are pretty large. However, the scatterplots shows that (log(Pop), ModernC) and (log(PPgdp), ModernC) illustrate clearer linear relationship. Therefore, log(Pop) and log(PPgdp) seem proper candidate for transformation.
+
+
 
 7. Given the selected transformations of the predictors, select a transformation of the response using `MASS::boxcox` or `car::boxCox` and justify.
 
 
 ```{r}
-
+MASS::boxcox(lm2)
 ```
 
+The Boxcox plot suggests there might be some transformation changing ModernC's power to some number close to 0.8. However, for simplicity and interpretation, there may not be any transformation of Y required since 1 is also in the range for available $\lambda$.
+
+
 8.  Fit the regression using the transformed variables.  Provide residual plots and added variables plots and comment.  If you feel that you need additional transformations of either the response or predictors, repeat any steps until you feel satisfied.
+```{r newfit, echo=F}
+lm2 = lm(ModernC ~ log(Pop) + log(PPgdp) + Change + Frate + Fertility + Purban, data=UN.nna)
+summary(lm2)
+plot(lm2)
+car::avPlots(lm2)
+```
+
+After refitting the model with log(Pop) and log(PPgdp), there is improvement in the Scale-Location plot. After the transformation, there seems no potential highly influential point.
 
 9. Start by finding the best transformation of the response and then find transformations of the predictors.  Do you end up with a different model than in 8?
 
 
-```{r}
-
+```{r cox}
+MASS::boxcox(lm1)
 ```
+
+The Boxcox suggests no transformation for ModernC since again, 1 is in the interval. Therefore, the following steps for boxTidwell will be the same as before. Thus there is no difference between these two procedures.
 
 10.  Are there any outliers or influential points in the data?  Explain.  If so, refit the model after removing any outliers and comment on residual plots.
 
@@ -130,6 +152,8 @@ The Residuals vs Fitted plot suggests constant and 0 expectation of residuals an
 ```{r}
 
 ```
+
+According to the Residuals vs Leverage plot, there seems no outliers.
 
 ## Summary of Results
 
