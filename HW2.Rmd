@@ -41,7 +41,10 @@ library(car)
 1. Create a summary of the data.  How many variables have missing data?  Which are quantitative and which are qualtitative?
 
 ```{r summary, echo=FALSE}
+library(tidyr)
 summary(UN3)
+data(UN3)
+UN.nna = UN3 %>% drop_na()
 ```
 There are 6 variables having missing data. ModernC, Change, PPgdp, Frate, Pop, Fertility and Purban all are quantitative.
 
@@ -49,22 +52,22 @@ There are 6 variables having missing data. ModernC, Change, PPgdp, Frate, Pop, F
 2. What is the mean and standard deviation of each quantitative predictor?  Provide in a nicely formatted table.
 
 ```{r kable, echo=FALSE}
-Mean = c(mean(UN3$ModernC, na.rm=T),
-         mean(UN3$Change, na.rm=T),
-         mean(UN3$PPgdp, na.rm=T),
-         mean(UN3$Frate, na.rm=T),
-         mean(UN3$Pop, na.rm=T),
-         mean(UN3$Fertility, na.rm=T),
-         mean(UN3$Purban, na.rm=T))
-Standard_err = c(sd(UN3$ModernC, na.rm=T),
-                 sd(UN3$Change,na.rm=T),
-                 sd(UN3$PPgdp, na.rm=T),
-                 sd(UN3$Frate, na.rm=T),
-                 sd(UN3$Pop, na.rm=T),
-                 sd(UN3$Fertility, na.rm=T),
-                 sd(UN3$Purban, na.rm=T))
-stat.UN3 = cbind(Mean, Standard_err)
-kable(t(stat.UN3), col.names=c('ModernC', 'Change', 'PPgdp', 'Frate', 'Pop', 'Fertility', 'Purban'), format='markdown')
+Mean = c(mean(UN.nna$ModernC, na.rm=T),
+         mean(UN.nna$Change, na.rm=T),
+         mean(UN.nna$PPgdp, na.rm=T),
+         mean(UN.nna$Frate, na.rm=T),
+         mean(UN.nna$Pop, na.rm=T),
+         mean(UN.nna$Fertility, na.rm=T),
+         mean(UN.nna$Purban, na.rm=T))
+Standard_err = c(sd(UN.nna$ModernC, na.rm=T),
+                 sd(UN.nna$Change,na.rm=T),
+                 sd(UN.nna$PPgdp, na.rm=T),
+                 sd(UN.nna$Frate, na.rm=T),
+                 sd(UN.nna$Pop, na.rm=T),
+                 sd(UN.nna$Fertility, na.rm=T),
+                 sd(UN.nna$Purban, na.rm=T))
+stat.UN = cbind(Mean, Standard_err)
+kable(t(stat.UN), col.names=c('ModernC', 'Change', 'PPgdp', 'Frate', 'Pop', 'Fertility', 'Purban'), format='markdown')
 ```
 
 
@@ -73,7 +76,7 @@ highlighting the relationships among the predictors. Comment
 on your findings regarding trying to predict `ModernC` from the other variables.  Are there potential outliers, nonlinear relationships or transformations that appear to be needed based on your graphical EDA?
 
 ```{r scatter plot}
-ggpairs(UN3, columns=c(1, 2, 3, 4, 5, 6), title='Scatter Plot among Variables')
+ggpairs(UN.nna, columns=c(1, 2, 3, 4, 5, 6), progress=F, title='Scatter Plot among Variables')
 ```
 
 There seem downward linear trendings in ModernC when Change and Fertility increase. When PPgdp increases, ModernC seems to increase exponentially. Change seems to increase linearly w.r.t Fertility and there is a negative correlation between PPgdp and Fertility. Two points are suspicious to be outliers. Transformation of Pop may be required as the range of Pop is considerably large.
@@ -84,11 +87,13 @@ There seem downward linear trendings in ModernC when Change and Fertility increa
 4.  Use the `lm()` function to perform a multiple linear regression with `ModernC` as the response and all other variables as the predictors, using the formula `ModernC ~ .`, where the `.` includes all remaining variables in the dataframe.  Create  diagnostic residual plot from the linear model object and comment on results regarding assumptions.  How many observations are used in your model fitting?
 
 ```{rinitial linear model, echo=FALSE}
-lm1 = lm(ModernC ~ Change + PPgdp + Frate + Pop + Fertility, data=UN3)
+lm1 = lm(ModernC ~ Change + PPgdp + Frate + Pop + Fertility, data=UN.nna)
 summary(lm1)
 par(mfrow=c(2,2))
 plot(lm1)
 ```
+The Residuals vs Fitted plot suggests constant and 0 expectation of residuals and the Scale-Location plot confirms this, though not very ideal at the tail. The Normal QQ plot suggests violation of normality. The Residuals vs Leverage suggests there is no highly influential point. 
+
 
 5. Examine added variable plots `car::avPlot` or `car::avPlots`  for your model above. Are there any plots that suggest that transformations are needed for any of the terms in the model? Describe. Is it likely that any of the localities are influential for any of the terms?  Which localities?  Which terms?  
 
