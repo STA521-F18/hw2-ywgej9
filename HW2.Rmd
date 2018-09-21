@@ -90,10 +90,11 @@ There seem downward linear trendings in ModernC when Change and Fertility increa
 ```{r initial linear, echo=FALSE}
 lm1 = lm(ModernC ~ Change + PPgdp + Frate + Pop + Fertility + Purban, data=UN.nna)
 summary(lm1)
+nrow(UN3)
 par(mfrow=c(2,2))
 plot(lm1)
 ```
-The Residuals vs Fitted plot suggests constant and 0 expectation of residuals, though fluctuated in the middle, and the Scale-Location plot shows violation of constant variance. The Normal QQ plot suggests violation of normality. The Residuals vs Leverage suggests there is no highly influential point. 124 observations are used in this model fitting.
+The Residuals vs Fitted plot suggests constant and 0 expectation of residuals, though fluctuated in the middle, and the Scale-Location plot shows violation of constant variance. The Normal QQ plot suggests violation of normality. The Residuals vs Leverage suggests there is no highly influential point. 210 observations exist, but only 125 observations are used in this model fitting, since they don't have missing values.
 
 
 5. Examine added variable plots `car::avPlot` or `car::avPlots`  for your model above. Are there any plots that suggest that transformations are needed for any of the terms in the model? Describe. Is it likely that any of the localities are influential for any of the terms?  Which localities?  Which terms?  
@@ -148,20 +149,26 @@ The Boxcox suggests no transformation for ModernC since again, 1 is in the inter
 
 10.  Are there any outliers or influential points in the data?  Explain.  If so, refit the model after removing any outliers and comment on residual plots.
 
+The Residuals vs Fitted, Normal Q-Q, and Scale-Location plots suggest there are three potential outliers, which are Poland, Azerbajian, and Cook Island.
 
-```{r}
-
+```{r outliers, echo=FALSE}
+library(tibble)
+pval = 2*(1 - pt(abs(rstudent(lm2)), lm2$df -1))
+rownames(UN.nna)[pval < 0.05/nrow(UN.nna)]
 ```
 
-According to the Residuals vs Leverage plot, there seems no outliers.
+Bonferroni test suggests that there is no outlier.
 
 ## Summary of Results
 
 11. For your final model, provide summaries of coefficients with 95% confidence intervals in a nice table with interpretations of each coefficient.  These should be in terms of the original units! 
 
 
-```{r}
-
+```{r final, echo=FALSE}
+lm3 = lm(ModernC ~ log(Pop) + log(PPgdp) + Change + Fertility + Frate, data=UN.nna)
+summary(lm3)
+plot(lm3)
+car::avPlots(lm3)
 ```
 
 
