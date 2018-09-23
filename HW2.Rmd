@@ -121,8 +121,8 @@ When boxTidwell is applied to PPgdp and Pop, MLE are closer to 0, so may be a lo
 7. Given the selected transformations of the predictors, select a transformation of the response using `MASS::boxcox` or `car::boxCox` and justify.
 
 
-```{r}
-MASS::boxcox(lm2)
+```{r boxcox}
+MASS::boxcox(lm1)
 ```
 
 The Boxcox plot suggests there might be some transformation changing ModernC's power to some number close to 0.8. However, for simplicity and interpretation, there may not be any transformation of Y required since 1 is also in the range for available $\lambda$.
@@ -165,19 +165,39 @@ Bonferroni test suggests that there is no outlier.
 
 
 ```{r final, echo=FALSE}
+library(xtable)
 lm3 = lm(ModernC ~ log(Pop) + log(PPgdp) + Change + Fertility + Frate, data=UN.nna)
 summary(lm3)
+par(mfrow=c(2, 2))
 plot(lm3)
 car::avPlots(lm3)
+kable(confint(lm3))
 ```
 
+The summary suggests that the transformed model satisfies ModernC = 4.102 + 1.441log(Pop) + 4.859log(PPgdp) + 4.698Change - 9.278Fertility + 0.200Frate. This means, 10% increase in Pop will lead to ModernC's increase by 1.441*log1.1 percent, which is 0.137%, and 10% increase in PPgdp will lead to 0.461 (4.859*log(1.1)) percent in ModernC. 1 unit increase in Change and Fertility will increase ModernC by 4.698% and 0.200% respectively, while 1 percfent increase in Frate will decrease ModernC by 9.278 percents.
 
 12. Provide a paragraph summarizing your final model  and findings suitable for the US envoy to the UN after adjusting for outliers or influential points.   You should provide a justification for any case deletions in your final model
 
 
-```{r}
+```{r final.inf, echo=FALSE}
+avPlots(lm3)
+UN.inf = UN.nna %>%
+  rownames_to_column('Country') %>%
+  mutate(Kuwait = (Country=='Kuwait')) %>%
+  mutate(Cook.Islands = (Country=='Cook.Islands')) %>%
+  mutate(Poland = (Country == 'Poland')) %>%
+  column_to_rownames('Country')
 
+lm.inf = lm(ModernC ~ log(Pop) + log(PPgdp) + Change + Fertility +Frate + Kuwait + Cook.Islands + Poland, UN.inf)
+kable(summary(lm.inf)$coefficients)
+
+UN.inf = UN.inf %>%
+  filter(!row.names(UN.inf) %in% c('Kuwait', 'Poland', 'Cook.Islands'))
+lm.inf = lm(ModernC ~ log(Pop) + log(PPgdp) + Change + Fertility + Frate, UN.inf)
+summary(lm.inf)
 ```
+
+Previously Bonferroni test indicates there is no outlier. According to avPlots and previous diagonositic plots, there are some suspicious influential points, which are Kuwait, Cook.Islands and Poland. Therefore, we seperate these points here and make them dummy variables. Refitting the model and doing the summary again give that there is no significance for being China or Vanuatu, so they are not really influential. Removing these two dummy variables from the model, we get Cook.Islands and Poland are strongly evident to be influential, and I would like to include Kuwait as influential as well, since its p-value is very close to 0.05.
 
 
 ## Methodology
