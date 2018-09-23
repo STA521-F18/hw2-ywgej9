@@ -39,8 +39,9 @@ summary(UN3)
 data(UN3)
 UN.nna = UN3 %>% drop_na()  ## data without NA's. Since model fitting process omit NA automatically, fitting UN3 and UN.nna will give the same result.
 ```
-__Answer__: There are 7 variables having missing data. ModernC, Change, PPgdp, Frate, Pop, Fertility and Purban all are quantitative.  
-  
+__Answer__: There are 7 variables having missing data. ModernC, Change, PPgdp, Frate, Pop, Fertility and Purban all are quantitative.
+\newline
+
 
 2. What is the mean and standard deviation of each quantitative predictor?  Provide in a nicely formatted table.
 
@@ -72,8 +73,9 @@ on your findings regarding trying to predict `ModernC` from the other variables.
 ggpairs(UN.nna, columns=c(1, 2, 3, 4, 5, 6, 7), progress=F, title='Scatter Plots and Correlations among Variables')
 ```
 
-__Answer__: There seem downward linear trendings in ModernC when Change and Fertility increase, but ModernC seems to increase together with Purban, and when PPgdp increases, ModernC seems to increase exponentially. Two points are suspicious to be outliers. Transformation of Pop may be required as the range of Pop is considerably large.  
-  
+__Answer__: There seem downward linear trendings in ModernC when Change and Fertility increase, but ModernC seems to increase together with Purban, and when PPgdp increases, ModernC seems to increase exponentially. Two points are suspicious to be outliers. Transformation of Pop may be required as the range of Pop is considerably large.
+\newline
+
 
 ## Model Fitting
 
@@ -86,7 +88,8 @@ nrow(UN.nna)  ## na.omit(UN3) is the same as UN.nna.
 par(mfrow=c(2,2))
 plot(lm1)
 ```
-The Residuals vs Fitted plot suggests constant and 0 expectation of residuals, though fluctuated in the middle, and the Scale-Location plot shows possible violation of constant variance. The Normal QQ plot fits well in the middle, though the point of Poland seems strange. The Residuals vs Leverage suggests there is no highly influential point. 210 observations exist, but only 125 observations are used in this model fitting, since they don't have missing values.  
+The Residuals vs Fitted plot suggests constant and 0 expectation of residuals, though fluctuated in the middle, and the Scale-Location plot shows possible violation of constant variance. The Normal QQ plot fits well in the middle, though the point of Poland seems strange. The Residuals vs Leverage suggests there is no highly influential point. 210 observations exist, but only 125 observations are used in this model fitting, since they don't have missing values.
+\newline
 
 
 5. Examine added variable plots `car::avPlot` or `car::avPlots`  for your model above. Are there any plots that suggest that transformations are needed for any of the terms in the model? Describe. Is it likely that any of the localities are influential for any of the terms?  Which localities?  Which terms?  
@@ -96,6 +99,8 @@ car::avPlots(lm(ModernC ~ Change + PPgdp + Frate + Pop + Fertility + Purban, dat
 ```
 
 __Answer__: Transformation seems needed for Pop, as most of the points cluster together except two. PPgdp might need transformation as well. China and India in terms of Pop seem influential, though the Residual vs Leverage does not suggest that.
+\newline
+
 
 6.  Using the Box-Tidwell  `car::boxTidwell` or graphical methods find appropriate transformations of the predictor variables to be used as predictors in the linear model.  If any predictors are negative, you may need to transform so that they are non-negative.  Describe your method and  the resulting transformations.
 
@@ -105,11 +110,9 @@ gPop.non = ggplot(data=UN.nna, aes(x=Pop, y=ModernC)) + geom_point()
 gPop.trans = ggplot(data=UN.nna, aes(x=log(Pop), y=ModernC)) + geom_point()
 gPPgdp.non = ggplot(data=UN.nna, aes(x=PPgdp, y=ModernC)) + geom_point()
 gPPgdp.trans = ggplot(data=UN.nna, aes(x=log(PPgdp), y=ModernC)) + geom_point()
-list(gPop.non, gPop.trans)
-list(gPPgdp.non, gPPgdp.trans)
 ```
 __Answer__: When boxTidwell is applied to PPgdp and Pop, MLE are closer to 0, so may be a log transformation, but there does not seem significant evidence for transformation, since both p-values are pretty large. However, the scatterplots shows that (log(Pop), ModernC) and (log(PPgdp), ModernC) illustrate clearer linear relationship. Therefore, log(Pop) and log(PPgdp) seem proper candidates for transformation.
-
+\newline
 
 
 7. Given the selected transformations of the predictors, select a transformation of the response using `MASS::boxcox` or `car::boxCox` and justify.
@@ -120,6 +123,7 @@ MASS::boxcox(lm1)
 ```
 
 __Answer__: The Boxcox plot suggests there might be some transformation changing ModernC's power to some number close to 0.8. However, for simplicity and interpretation, there may not be any transformation of Y required since 1 is also in the range for available $\lambda$.
+\newline
 
 
 8.  Fit the regression using the transformed variables.  Provide residual plots and added variables plots and comment.  If you feel that you need additional transformations of either the response or predictors, repeat any steps until you feel satisfied.
@@ -131,7 +135,8 @@ plot(lm2)
 car::avPlots(lm2)
 ```
 
-__Answer__: After refitting the model with log(Pop) and log(PPgdp), there is improvement in the Scale-Location plot. There seems no potential highly influential point, after the transformation.  
+__Answer__: After refitting the model with log(Pop) and log(PPgdp), there is improvement in the Scale-Location plot. There seems no potential highly influential point, after the transformation.
+\newline
 
 
 9. Start by finding the best transformation of the response and then find transformations of the predictors.  Do you end up with a different model than in 8?
@@ -141,7 +146,8 @@ __Answer__: After refitting the model with log(Pop) and log(PPgdp), there is imp
 MASS::boxcox(lm1)
 ```
 
-__Answer__: The Boxcox suggests no transformation for ModernC since again, 1 is in the interval. Therefore, the following steps for boxTidwell will be the same as before (Question 6 to Q8). Thus there is no difference between these two procedures.  
+__Answer__: The Boxcox suggests no transformation for ModernC since again, 1 is in the interval. Therefore, the following steps for boxTidwell will be the same as before (Question 6 to Q8). Thus there is no difference between these two procedures.
+\newline
 
 
 10.  Are there any outliers or influential points in the data?  Explain.  If so, refit the model after removing any outliers and comment on residual plots.
@@ -152,7 +158,8 @@ pval = 2*(1 - pt(abs(rstudent(lm2)), lm2$df -1))
 rownames(UN.nna)[pval < 0.05/nrow(UN.nna)]
 ```
 
-__Answer__: The Residuals vs Fitted, Normal Q-Q, and Scale-Location plots suggest there are three potential outliers, which are Poland, Azerbajian, and Cook Island. However, Bonferroni test suggests that there is no outlier.  
+__Answer__: The Residuals vs Fitted, Normal Q-Q, and Scale-Location plots suggest there are three potential outliers, which are Poland, Azerbajian, and Cook Island. However, Bonferroni test suggests that there is no outlier.
+\newline
 
 
 ## Summary of Results
@@ -169,7 +176,10 @@ interpretation = c("The base value of ModernC without any predictor", "10% incre
 kable(cbind(confint(lm3), interpretation))
 ```
 
-__Answer__: The summary suggests that the transformed model satisfies $$ModernC = 4.102 + 1.441log(Pop) + 4.859log(PPgdp) + 4.698Change - 9.278Fertility + 0.200Frate$$ This means, 10% increase in Pop will lead to ModernC's increase by 1.441*log1.1 percent, which is 0.137%, and 10% increase in PPgdp will lead to 0.461 (4.859*log(1.1)) percent in ModernC. 1 unit increase in Change and Fertility will increase ModernC by 4.698% and 0.200% respectively, while 1 percent increase in Frate will decrease ModernC by 9.278 percents.  
+__Answer__: The summary suggests that the transformed model satisfies $$ModernC = 4.102 + 1.441log(Pop) + 4.859log(PPgdp) + 4.698Change - 9.278Fertility + 0.200Frate$$ This means, 10% increase in Pop will lead to ModernC's increase by 1.441*log1.1 percent, which is 0.137%, and 10% increase in PPgdp will lead to 0.461 (4.859*log(1.1)) percent in ModernC. 1 unit increase in Change and Fertility will increase ModernC by 4.698% and 0.200% respectively, while 1 percent increase in Frate will decrease ModernC by 9.278 percents.
+\newline
+\newline
+
 
 12. Provide a paragraph summarizing your final model  and findings suitable for the US envoy to the UN after adjusting for outliers or influential points.   You should provide a justification for any case deletions in your final model
 
@@ -180,6 +190,7 @@ plot(lm3)
 ```
 
 According to Cook's distance in Residuals vs Leverage plot, there is no point with this distance over 1. Therefore, I don't think there is any influential point so no deletion, same model as in Q11.
+\newline
 
 
 ## Methodology
@@ -204,7 +215,9 @@ e_Y = (I-H)Y &= \hat{\beta}_0 + \hat{\beta}_1\underbrace{e_{x_i}}_{(I-H)X_i} \qq
 \implies\mathbf{1}_n^T \hat{\beta}_0 = 0 \implies \hat\beta_0 = 0\\
 \end{aligned}
 \]
-Therefore, the intercept of avplots are always zero.
+Therefore, the intercept of avplots are always zero.  
+\newline
+
 
 14. For multiple regression with more than 2 predictors, say a full model given by `Y ~ X1 + X2 + ... Xp`   we create the added variable plot for variable `j` by regressing `Y` on all of the `X`'s except `Xj` to form `e_Y` and then regressing `Xj` on all of the other X's to form `e_X`.  Confirm that the slope in a manually constructed added variable plot for one of the predictors  in Ex. 10 is the same as the estimate from your model. 
 ```{r 14, echo=F}
