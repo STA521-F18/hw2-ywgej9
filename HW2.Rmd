@@ -8,11 +8,6 @@ output:
     df_print: paged
 ---
 
-## Backgound Reading
-
-Readings: Chapters 3-4 in Weisberg Applied Linear Regression
-
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(ISLR)
@@ -29,9 +24,8 @@ This exercise involves the UN data set from `alr3` package. Install `alr3` and t
 
 ## Exploratory Data Analysis
 
-0.  Preliminary read in the data.  After testing, modify the code chunk so that output, messages and warnings are suppressed.  *Exclude text from final*
 
-```{r data}
+```{r data, echo=FALSE}
 library(alr3)
 data(UN3, package="alr3")
 help(UN3)
@@ -45,28 +39,28 @@ library(car)
 library(tidyr)
 summary(UN3)
 data(UN3)
-UN.nna = UN3 %>% drop_na()
+UN.nna = UN3 %>% drop_na()  ## data without NA's. Since model fitting process omit NA automatically, fitting UN3 and UN.nna will give the same result.
 ```
-There are 6 variables having missing data. ModernC, Change, PPgdp, Frate, Pop, Fertility and Purban all are quantitative.
-
+__Answer__: There are 7 variables having missing data. ModernC, Change, PPgdp, Frate, Pop, Fertility and Purban all are quantitative.  
+  
 
 2. What is the mean and standard deviation of each quantitative predictor?  Provide in a nicely formatted table.
 
 ```{r kable, echo=FALSE}
-Mean = c(mean(UN.nna$ModernC, na.rm=T),
-         mean(UN.nna$Change, na.rm=T),
-         mean(UN.nna$PPgdp, na.rm=T),
-         mean(UN.nna$Frate, na.rm=T),
-         mean(UN.nna$Pop, na.rm=T),
-         mean(UN.nna$Fertility, na.rm=T),
-         mean(UN.nna$Purban, na.rm=T))
-Standard_err = c(sd(UN.nna$ModernC, na.rm=T),
-                 sd(UN.nna$Change,na.rm=T),
-                 sd(UN.nna$PPgdp, na.rm=T),
-                 sd(UN.nna$Frate, na.rm=T),
-                 sd(UN.nna$Pop, na.rm=T),
-                 sd(UN.nna$Fertility, na.rm=T),
-                 sd(UN.nna$Purban, na.rm=T))
+Mean = c(mean(UN3$ModernC, na.rm=T),
+         mean(UN3$Change, na.rm=T),
+         mean(UN3$PPgdp, na.rm=T),
+         mean(UN3$Frate, na.rm=T),
+         mean(UN3$Pop, na.rm=T),
+         mean(UN3$Fertility, na.rm=T),
+         mean(UN3$Purban, na.rm=T))
+Standard_err = c(sd(UN3$ModernC, na.rm=T),
+                 sd(UN3$Change,na.rm=T),
+                 sd(UN3$PPgdp, na.rm=T),
+                 sd(UN3$Frate, na.rm=T),
+                 sd(UN3$Pop, na.rm=T),
+                 sd(UN3$Fertility, na.rm=T),
+                 sd(UN3$Purban, na.rm=T))
 stat.UN = cbind(Mean, Standard_err)
 kable(t(stat.UN), col.names=c('ModernC', 'Change', 'PPgdp', 'Frate', 'Pop', 'Fertility', 'Purban'), format='markdown')
 ```
@@ -76,12 +70,12 @@ kable(t(stat.UN), col.names=c('ModernC', 'Change', 'PPgdp', 'Frate', 'Pop', 'Fer
 highlighting the relationships among the predictors. Comment
 on your findings regarding trying to predict `ModernC` from the other variables.  Are there potential outliers, nonlinear relationships or transformations that appear to be needed based on your graphical EDA?
 
-```{r scatter plot}
-ggpairs(UN.nna, columns=c(1, 2, 3, 4, 5, 6, 7), progress=F, title='Scatter Plot among Variables')
+```{r scatter plot, echo=F}
+ggpairs(UN.nna, columns=c(1, 2, 3, 4, 5, 6, 7), progress=F, title='Scatter Plots and Correlations among Variables')
 ```
 
-There seem downward linear trendings in ModernC when Change and Fertility increase. When PPgdp increases, ModernC seems to increase exponentially. Change seems to increase linearly w.r.t Fertility and there is a negative correlation between PPgdp and Fertility. Two points are suspicious to be outliers. Transformation of Pop may be required as the range of Pop is considerably large. ModernC seems to increase linearly w.r.t Purban while Change decreases w.r.t Purban.
-
+__Answer__: There seem downward linear trendings in ModernC when Change and Fertility increase, but ModernC seems to increase together with Purban, and when PPgdp increases, ModernC seems to increase exponentially. Two points are suspicious to be outliers. Transformation of Pop may be required as the range of Pop is considerably large.  
+  
 
 ## Model Fitting
 
@@ -90,66 +84,69 @@ There seem downward linear trendings in ModernC when Change and Fertility increa
 ```{r initial linear, echo=FALSE}
 lm1 = lm(ModernC ~ Change + PPgdp + Frate + Pop + Fertility + Purban, data=UN.nna)
 summary(lm1)
-nrow(UN3)
+nrow(UN.nna)  ## na.omit(UN3) is the same as UN.nna.
 par(mfrow=c(2,2))
 plot(lm1)
 ```
-The Residuals vs Fitted plot suggests constant and 0 expectation of residuals, though fluctuated in the middle, and the Scale-Location plot shows violation of constant variance. The Normal QQ plot suggests violation of normality. The Residuals vs Leverage suggests there is no highly influential point. 210 observations exist, but only 125 observations are used in this model fitting, since they don't have missing values.
+The Residuals vs Fitted plot suggests constant and 0 expectation of residuals, though fluctuated in the middle, and the Scale-Location plot shows possible violation of constant variance. The Normal QQ plot fits well in the middle, though the point of Poland seems strange. The Residuals vs Leverage suggests there is no highly influential point. 210 observations exist, but only 125 observations are used in this model fitting, since they don't have missing values.  
 
 
 5. Examine added variable plots `car::avPlot` or `car::avPlots`  for your model above. Are there any plots that suggest that transformations are needed for any of the terms in the model? Describe. Is it likely that any of the localities are influential for any of the terms?  Which localities?  Which terms?  
 
-```{r}
+```{r avplots, echo=F}
 car::avPlots(lm(ModernC ~ Change + PPgdp + Frate + Pop + Fertility + Purban, data=UN.nna))
 ```
 
-Transformation seems needed for Pop, as most of the points cluster together except two. China and India in terms of Pop seem influential, though the Residual vs Leverage does not suggest that.
+__Answer__: Transformation seems needed for Pop, as most of the points cluster together except two. PPgdp might need transformation as well. China and India in terms of Pop seem influential, though the Residual vs Leverage does not suggest that.
 
 6.  Using the Box-Tidwell  `car::boxTidwell` or graphical methods find appropriate transformations of the predictor variables to be used as predictors in the linear model.  If any predictors are negative, you may need to transform so that they are non-negative.  Describe your method and  the resulting transformations.
 
-```{r}
+```{r boxtidwell, echo=F}
 car::boxTidwell(ModernC~Pop + PPgdp, ~Change + Frate + Fertility + Purban, data=UN.nna)
-ggplot(data=UN.nna, aes(x=Pop, y=ModernC)) + geom_point()
-ggplot(data=UN.nna, aes(x=log(Pop), y=ModernC)) + geom_point()
-ggplot(data=UN.nna, aes(x=PPgdp, y=ModernC)) + geom_point()
-ggplot(data=UN.nna, aes(x=log(PPgdp), y=ModernC)) + geom_point()
+gPop.non = ggplot(data=UN.nna, aes(x=Pop, y=ModernC)) + geom_point()
+gPop.trans = ggplot(data=UN.nna, aes(x=log(Pop), y=ModernC)) + geom_point()
+gPPgdp.non = ggplot(data=UN.nna, aes(x=PPgdp, y=ModernC)) + geom_point()
+gPPgdp.trans = ggplot(data=UN.nna, aes(x=log(PPgdp), y=ModernC)) + geom_point()
+list(gPop.non, gPop.trans)
+list(gPPgdp.non, gPPgdp.trans)
 ```
-When boxTidwell is applied to PPgdp and Pop, MLE are closer to 0, so may be a log transformation, but there does not seem significant evidence for transformation, since both p-values are pretty large. However, the scatterplots shows that (log(Pop), ModernC) and (log(PPgdp), ModernC) illustrate clearer linear relationship. Therefore, log(Pop) and log(PPgdp) seem proper candidate for transformation.
+__Answer__: When boxTidwell is applied to PPgdp and Pop, MLE are closer to 0, so may be a log transformation, but there does not seem significant evidence for transformation, since both p-values are pretty large. However, the scatterplots shows that (log(Pop), ModernC) and (log(PPgdp), ModernC) illustrate clearer linear relationship. Therefore, log(Pop) and log(PPgdp) seem proper candidates for transformation.
 
 
 
 7. Given the selected transformations of the predictors, select a transformation of the response using `MASS::boxcox` or `car::boxCox` and justify.
 
 
-```{r boxcox}
+```{r boxcox, echo=FALSE}
 MASS::boxcox(lm1)
 ```
 
-The Boxcox plot suggests there might be some transformation changing ModernC's power to some number close to 0.8. However, for simplicity and interpretation, there may not be any transformation of Y required since 1 is also in the range for available $\lambda$.
+__Answer__: The Boxcox plot suggests there might be some transformation changing ModernC's power to some number close to 0.8. However, for simplicity and interpretation, there may not be any transformation of Y required since 1 is also in the range for available $\lambda$.
 
 
 8.  Fit the regression using the transformed variables.  Provide residual plots and added variables plots and comment.  If you feel that you need additional transformations of either the response or predictors, repeat any steps until you feel satisfied.
 ```{r newfit, echo=F}
 lm2 = lm(ModernC ~ log(Pop) + log(PPgdp) + Change + Frate + Fertility + Purban, data=UN.nna)
 summary(lm2)
+par(mfrow=c(2, 2))
 plot(lm2)
 car::avPlots(lm2)
 ```
 
-After refitting the model with log(Pop) and log(PPgdp), there is improvement in the Scale-Location plot. After the transformation, there seems no potential highly influential point.
+__Answer__: After refitting the model with log(Pop) and log(PPgdp), there is improvement in the Scale-Location plot. There seems no potential highly influential point, after the transformation.  
+
 
 9. Start by finding the best transformation of the response and then find transformations of the predictors.  Do you end up with a different model than in 8?
 
 
-```{r cox}
+```{r cox1, echo=FALSE}
 MASS::boxcox(lm1)
 ```
 
-The Boxcox suggests no transformation for ModernC since again, 1 is in the interval. Therefore, the following steps for boxTidwell will be the same as before. Thus there is no difference between these two procedures.
+__Answer__: The Boxcox suggests no transformation for ModernC since again, 1 is in the interval. Therefore, the following steps for boxTidwell will be the same as before (Question 6 to Q8). Thus there is no difference between these two procedures.  
+
 
 10.  Are there any outliers or influential points in the data?  Explain.  If so, refit the model after removing any outliers and comment on residual plots.
-
-The Residuals vs Fitted, Normal Q-Q, and Scale-Location plots suggest there are three potential outliers, which are Poland, Azerbajian, and Cook Island.
 
 ```{r outliers, echo=FALSE}
 library(tibble)
@@ -157,7 +154,8 @@ pval = 2*(1 - pt(abs(rstudent(lm2)), lm2$df -1))
 rownames(UN.nna)[pval < 0.05/nrow(UN.nna)]
 ```
 
-Bonferroni test suggests that there is no outlier.
+__Answer__: The Residuals vs Fitted, Normal Q-Q, and Scale-Location plots suggest there are three potential outliers, which are Poland, Azerbajian, and Cook Island. However, Bonferroni test suggests that there is no outlier.  
+
 
 ## Summary of Results
 
@@ -168,36 +166,22 @@ Bonferroni test suggests that there is no outlier.
 library(xtable)
 lm3 = lm(ModernC ~ log(Pop) + log(PPgdp) + Change + Fertility + Frate, data=UN.nna)
 summary(lm3)
-par(mfrow=c(2, 2))
-plot(lm3)
 car::avPlots(lm3)
-kable(confint(lm3))
+interpretation = c("The base value of ModernC without any predictor", "10% increase will increase ModernC by 0.137%", "10% increase will increase ModernC by 0.461%", "1% increase will increase ModernC by 4.698%", "1% increase will decrease ModernC by 9.278%", "1 unit increase will increase ModernC by 0.200%")
+kable(cbind(confint(lm3), interpretation))
 ```
 
-The summary suggests that the transformed model satisfies ModernC = 4.102 + 1.441log(Pop) + 4.859log(PPgdp) + 4.698Change - 9.278Fertility + 0.200Frate. This means, 10% increase in Pop will lead to ModernC's increase by 1.441*log1.1 percent, which is 0.137%, and 10% increase in PPgdp will lead to 0.461 (4.859*log(1.1)) percent in ModernC. 1 unit increase in Change and Fertility will increase ModernC by 4.698% and 0.200% respectively, while 1 percfent increase in Frate will decrease ModernC by 9.278 percents.
+__Answer__: The summary suggests that the transformed model satisfies $$ModernC = 4.102 + 1.441log(Pop) + 4.859log(PPgdp) + 4.698Change - 9.278Fertility + 0.200Frate$$ This means, 10% increase in Pop will lead to ModernC's increase by 1.441*log1.1 percent, which is 0.137%, and 10% increase in PPgdp will lead to 0.461 (4.859*log(1.1)) percent in ModernC. 1 unit increase in Change and Fertility will increase ModernC by 4.698% and 0.200% respectively, while 1 percent increase in Frate will decrease ModernC by 9.278 percents.  
 
 12. Provide a paragraph summarizing your final model  and findings suitable for the US envoy to the UN after adjusting for outliers or influential points.   You should provide a justification for any case deletions in your final model
 
 
 ```{r final.inf, echo=FALSE}
-avPlots(lm3)
-UN.inf = UN.nna %>%
-  rownames_to_column('Country') %>%
-  mutate(Kuwait = (Country=='Kuwait')) %>%
-  mutate(Cook.Islands = (Country=='Cook.Islands')) %>%
-  mutate(Poland = (Country == 'Poland')) %>%
-  column_to_rownames('Country')
-
-lm.inf = lm(ModernC ~ log(Pop) + log(PPgdp) + Change + Fertility +Frate + Kuwait + Cook.Islands + Poland, UN.inf)
-kable(summary(lm.inf)$coefficients)
-
-UN.inf = UN.inf %>%
-  filter(!row.names(UN.inf) %in% c('Kuwait', 'Poland', 'Cook.Islands'))
-lm.inf = lm(ModernC ~ log(Pop) + log(PPgdp) + Change + Fertility + Frate, UN.inf)
-summary(lm.inf)
+par(mfrow=c(2, 2))
+plot(lm3)
 ```
 
-Previously Bonferroni test indicates there is no outlier. According to avPlots and previous diagonositic plots, there are some suspicious influential points, which are Kuwait, Cook.Islands and Poland. Therefore, we seperate these points here and make them dummy variables. Refitting the model and doing the summary again give that there is no significance for being China or Vanuatu, so they are not really influential. Removing these two dummy variables from the model, we get Cook.Islands and Poland are strongly evident to be influential, and I would like to include Kuwait as influential as well, since its p-value is very close to 0.05.
+According to Cook's distance in Residuals vs Leverage plot, there is no point with this distance over 1. Therefore, I don't think there is any influential point so no deletion, same model as in Q11.
 
 
 ## Methodology
@@ -205,5 +189,37 @@ Previously Bonferroni test indicates there is no outlier. According to avPlots a
     
 13. Prove that the intercept in the added variable scatter plot will always be zero.  _Hint:  use the fact that if $H$ is the project matrix which contains a column of ones, then $1_n^T (I - H) = 0$.  Use this to show that the sample mean of residuals will always be zero if there is an intercept._
 
+__Answer__:
+\[
+\begin{aligned}
+e_Y &= \hat{\beta}_0 + \hat{\beta}_1e_{x_i}\\
+\mathbf{1}_n^T e &= \mathbf{1}_n^T (I-H)Y \qquad\text{times row vector 1 on both sides}\\
+&=[\mathbf{1}_n^T (I-H)] Y\\
+&=0*Y  \qquad\text{using hint}\\
+&=0\qquad\text{(1)}\\
+e_Y = (I-H)Y &= \hat{\beta}_0 + \hat{\beta}_1\underbrace{e_{x_i}}_{(I-H)X_i} \qquad\text{(2)}\\
+\text{(1)} \implies 0 &= \mathbf{1}_n^T (I-H)Y\\
+&= \mathbf {1}_n^T[\hat{\beta}_0 + \hat{\beta}_1 e_{x_i}]\qquad\text{by (2)}\\
+&= \mathbf{1}_n^T \hat{\beta}_0 + \mathbf{1}_n^T \hat{\beta}_1 (I-H) x_{i}\\
+&= \mathbf{1}_n^T \hat{\beta}_0 + \hat{\beta}_1[\mathbf{1}_n^T(I-H)] x_{i}\\
+\implies 0 = \mathbf{1}_n^T \hat{\beta}_0 + 0 \qquad\text{by hint}\\
+\implies\mathbf{1}_n^T \hat{\beta}_0 = 0 \implies \hat\beta_0 = 0\\
+\end{aligned}
+\]
+Therefore, the intercept of avplots are always zero.
 
 14. For multiple regression with more than 2 predictors, say a full model given by `Y ~ X1 + X2 + ... Xp`   we create the added variable plot for variable `j` by regressing `Y` on all of the `X`'s except `Xj` to form `e_Y` and then regressing `Xj` on all of the other X's to form `e_X`.  Confirm that the slope in a manually constructed added variable plot for one of the predictors  in Ex. 10 is the same as the estimate from your model. 
+```{r 14, echo=F}
+e_Y = residuals(lm(ModernC~log(Pop)+log(PPgdp)+Fertility+Change, UN.nna))
+e_X = residuals(lm(Frate ~ log(Pop)+log(PPgdp)+Fertility+Change, UN.nna))
+df = data.frame(e_Y=e_Y, e_X=e_X)
+ggplot(data=df, aes(x=e_X, y=e_Y)) +
+  geom_point()+
+  geom_smooth(method='lm', se=F)
+lm3$coefficients["Frate"]
+Original = summary(lm3)$coefficients['Frate',c('Estimate','t value')]
+Partial = summary(lm(e_Y~e_X))$coefficients['e_X', c('Estimate', 't value')]
+kable(rbind(Original, Partial))
+```
+
+Two regressions give the same coefficients, though tiny different t-values, which may come from the change in degree of freedom.
